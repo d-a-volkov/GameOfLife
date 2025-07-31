@@ -2,17 +2,20 @@ namespace GameOfLife
 {
     public partial class FormMain : Form
     {
+        private Engine Population;
         private Graphics graphics;
         private int resolution = 3;
-        private int density = 2;
-        private bool[,] field;
-        private int rows;
-        private int cols;
-        private int currentGeneratuion;
 
         public FormMain()
         {
-            InitializeComponent();
+            InitializeComponent();            
+        }
+
+        private void FormMain_Shown(object sender, EventArgs e)
+        {
+            pictureBoxFields.Image = new Bitmap(pictureBoxFields.Width, pictureBoxFields.Height);
+            graphics = Graphics.FromImage(pictureBoxFields.Image);
+            graphics.FillRectangle(Brushes.Crimson, 0, 0, resolution - 1, resolution - 1);
         }
 
         private void numericUpDownResolution_ValueChanged(object sender, EventArgs e)
@@ -20,85 +23,28 @@ namespace GameOfLife
             resolution = (int)numericUpDownResolution.Value;
         }
 
-        private void numericUpDownDensity_ValueChanged(object sender, EventArgs e)
-        {
-            density = (int)numericUpDownDensity.Value;
-        }
-
-        private void setFields()
-        {
-            currentGeneratuion = 0;
-            pictureBoxFields.Image = new Bitmap(pictureBoxFields.Width, pictureBoxFields.Height);
-            graphics = Graphics.FromImage(pictureBoxFields.Image);
-            graphics.FillRectangle(Brushes.Crimson, 0, 0, resolution, resolution);
-
-            rows = pictureBoxFields.Height / resolution;
-            cols = pictureBoxFields.Width / resolution;
-            field = new bool[cols, rows];
-
-            Random random = new Random();
-            for (int x = 0; x < cols; x++)
-            {
-                for (int y = 0; y < rows; y++)
-                {
-                    field[x, y] = random.Next(density) == 0;
-                }
-            }
-
-        }
-
-        private void NextGeneration()
+        private void DrawNextGeneration()
         {
             graphics.Clear(Color.Black);
+            
+            Population.NextGeneration();
 
-            var newField = new bool[cols, rows];
-
-            for (int x = 0; x < cols; x++)
+            for (int x = 0; x < Population.Space.GetUpperBound(0); x++)
             {
-                for (int y = 0; y < rows; y++)
+                for (int y = 0; y < Population.Space.GetUpperBound(1); y++)
                 {
-                    var neightbourCount = CountNeighbour(x, y);
-                    var haslife = field[x, y];
-
-                    if (!haslife && neightbourCount == 3)
-                        newField[x, y] = true;
-                    else if (haslife && (neightbourCount < 2 || neightbourCount > 3))
-                        newField[x, y] = false;
-                    else
-                        newField[x, y] = field[x, y];
+                    var haslife = Population.Space[x, y];
 
                     if (haslife)
                     {
-                        graphics.FillRectangle(Brushes.Crimson, x * resolution, y * resolution, resolution, resolution);
+                        graphics.FillRectangle(Brushes.Crimson, x * resolution, y * resolution, resolution - 1, resolution - 1);
                     }
-
                 }
             }
-            field = newField;
             pictureBoxFields.Refresh();
-            this.Text = $"Поколение {++currentGeneratuion}";
+            this.Text = $"Поколение {Population.CurrentGeneratuion}";
         }
 
-        private int CountNeighbour(int x, int y)
-        {
-            int count = 0;
-
-            for (int i = -1; i < 2; i++)
-            {
-                for (int j = -1; j < 2; j++)
-                {
-                    var col = (x + i + cols) % cols;
-                    var row = (y + j + rows) % rows;
-
-                    var isSelfChecking = col == x && row == y;
-                    var haslife = field[col, row];
-
-                    if (haslife && !isSelfChecking)
-                        count++;
-                }
-            }
-            return count;
-        }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
@@ -110,7 +56,11 @@ namespace GameOfLife
             numericUpDownResolution.Enabled = false;
             numericUpDownDensity.Enabled = false;
 
-            setFields();
+            Population = new Engine(
+                rows: pictureBoxFields.Height / resolution,
+                cols: pictureBoxFields.Width / resolution,
+                density: (int)numericUpDownDensity.Maximum - (int)numericUpDownDensity.Value + 2
+                );
 
             timer1.Enabled = true;
         }
@@ -126,30 +76,22 @@ namespace GameOfLife
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            NextGeneration();
+            DrawNextGeneration();
         }
 
         private void pictureBoxFields_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!timer1.Enabled) 
+            if (!timer1.Enabled)
                 return;
 
             var x = e.X / resolution;
             var y = e.Y / resolution;
 
-            if (!ValidateMousePicture(x, y))
-                return;
-
             if (e.Button == MouseButtons.Left)
-                field[x,y] = true;
+                Population.SetHasLifeTrue(x, y);
 
             if (e.Button == MouseButtons.Right)
-                field[x, y] = false;
-        }
-
-        private bool ValidateMousePicture(int x, int y)
-        {
-            return x >= 0 && y >= 0 && x < cols && y < rows;
+                Population.SetHasLifeFalse(x, y);
         }
     }
 }

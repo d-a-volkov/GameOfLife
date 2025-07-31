@@ -84,13 +84,12 @@ namespace GameOfLife
             // numericUpDownDensity
             // 
             numericUpDownDensity.Location = new Point(10, 69);
-            numericUpDownDensity.Minimum = new decimal(new int[] { 2, 0, 0, 0 });
+            numericUpDownDensity.Maximum = new decimal(new int[] { 25, 0, 0, 0 });
             numericUpDownDensity.Name = "numericUpDownDensity";
             numericUpDownDensity.Size = new Size(146, 23);
             numericUpDownDensity.TabIndex = 5;
             numericUpDownDensity.TextAlign = HorizontalAlignment.Right;
-            numericUpDownDensity.Value = new decimal(new int[] { 2, 0, 0, 0 });
-            numericUpDownDensity.ValueChanged += numericUpDownDensity_ValueChanged;
+            numericUpDownDensity.Value = new decimal(new int[] { 25, 0, 0, 0 });
             // 
             // lblResolution
             // 
@@ -157,6 +156,7 @@ namespace GameOfLife
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Игра \"Жизнь\"";
             WindowState = FormWindowState.Maximized;
+            Shown += FormMain_Shown;
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel1.PerformLayout();
             splitContainer1.Panel2.ResumeLayout(false);
